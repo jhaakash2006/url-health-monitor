@@ -20,10 +20,25 @@ def get_connection():
             url TEXT NOT NULL,
             name TEXT NOT NULL,
             enabled INTEGER NOT NULL DEFAULT 1,
-            interval INTEGER NOT NULL DEFAULT 60
+            interval INTEGER NOT NULL DEFAULT 60,
+            slow_threshold REAL NOT NULL DEFAULT 2.0
         )
         """
     )
+
+    columns = connection.execute(
+        "PRAGMA table_info(urls)"
+    ).fetchall()
+
+    column_names = [row["name"] for row in columns]
+
+    if "slow_threshold" not in column_names:
+        connection.execute(
+            """
+            ALTER TABLE urls
+            ADD COLUMN slow_threshold REAL NOT NULL DEFAULT 2.0
+            """
+        )
 
     connection.execute(
         """
@@ -42,6 +57,19 @@ def get_connection():
 
     connection.execute(
         """
+        CREATE TABLE IF NOT EXISTS email_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            alert_type TEXT NOT NULL,
+            url_name TEXT NOT NULL,
+            url TEXT NOT NULL,
+            message TEXT NOT NULL
+        )
+        """
+    )
+
+    connection.execute(
+        """
         CREATE INDEX IF NOT EXISTS idx_health_checks_url_id
         ON health_checks(url_id)
         """
@@ -51,6 +79,13 @@ def get_connection():
         """
         CREATE INDEX IF NOT EXISTS idx_health_checks_timestamp
         ON health_checks(timestamp)
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_email_alerts_timestamp
+        ON email_alerts(timestamp)
         """
     )
 
@@ -76,6 +111,14 @@ def init_database():
     print("Database:", DATABASE)
     print("Tables:", table_names)
     print("Indexes:", index_names)
+
+    columns = connection.execute(
+        "PRAGMA table_info(urls)"
+    ).fetchall()
+
+    column_names = [row["name"] for row in columns]
+
+    print("URL columns:", column_names)
 
     connection.close()
 
