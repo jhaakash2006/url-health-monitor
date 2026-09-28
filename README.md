@@ -138,6 +138,10 @@ I used the following technologies in this project:
 
 * GitHub
 
+## Project Workflow
+
+![Project Workflow](workflow.png)
+
 ## Project Files
 
 ### app.py
